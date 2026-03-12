@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>SRM Banking Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+<div class="header">
+
+<h1>SRM Banking Management System</h1>
+
+<button onclick="logout()" class="logout">Logout</button>
+
+</div>
+
+
+<div class="cards">
+
+<div class="card">
+
+<h2>Your Balance</h2>
+
+<p id="balance">₹0</p>
+
+<button onclick="getBalance()">Refresh Balance</button>
+
+</div>
+
+
+<div class="card">
+
+<h2>Transfer Money</h2>
+
+<input id="receiver" placeholder="Receiver Email">
+
+<input id="amount" placeholder="Amount">
+
+<button onclick="transfer()">Send Money</button>
+
+</div>
+
+</div>
+
+
+<div class="transactions">
+
+<h2>Transaction History</h2>
+
+<div id="transactionsList">
+
+No transactions yet
+
+</div>
+
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
