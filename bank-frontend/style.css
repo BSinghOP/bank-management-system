@@ -1,81 +1,15 @@
-/* body{
-font-family: Arial;
-margin:0;
-background:#f4f6f9;
-}
-
-.header{
-background:#1e3a8a;
-color:white;
-padding:20px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-.logout{
-background:red;
-color:white;
-border:none;
-padding:10px 15px;
-cursor:pointer;
-border-radius:5px;
-}
-
-.dashboard{
-padding:40px;
-}
-
-.cards{
-display:flex;
-gap:30px;
-margin-bottom:40px;
-}
-
-.card{
-background:white;
-padding:30px;
-border-radius:10px;
-box-shadow:0 5px 15px rgba(0,0,0,0.1);
-width:300px;
-}
-
-input{
-width:100%;
-padding:10px;
-margin:10px 0;
-border-radius:5px;
-border:1px solid #ccc;
-}
-
-button{
-padding:10px;
-border:none;
-background:#2563eb;
-color:white;
-cursor:pointer;
-border-radius:5px;
-}
-
-.transactions{
-background:white;
-padding:30px;
-border-radius:10px;
-box-shadow:0 5px 15px rgba(0,0,0,0.1);
-}
- */
 body{
-font-family: 'Segoe UI', Arial, sans-serif;
+font-family:'Segoe UI',Arial;
 margin:0;
 background:#f1f6fb;
 }
 
-/* Header */
+/* HEADER */
 
 .header{
 background:#0f4c81;
 color:white;
-padding:20px 40px;
+padding:18px 40px;
 display:flex;
 justify-content:space-between;
 align-items:center;
@@ -84,105 +18,101 @@ box-shadow:0 3px 10px rgba(0,0,0,0.1);
 
 .header h1{
 margin:0;
-font-size:24px;
+font-size:22px;
 letter-spacing:1px;
 }
 
-/* Logout Button */
+/* SIDEBAR */
 
-.logout{
-background:#e53935;
+.sidebar{
+width:220px;
+background:#0f4c81;
 color:white;
-border:none;
-padding:10px 16px;
-cursor:pointer;
-border-radius:6px;
-font-weight:500;
+position:fixed;
+top:0;
+bottom:0;
+padding-top:80px;
+}
+
+.sidebar a{
+display:block;
+padding:15px 20px;
+color:white;
+text-decoration:none;
 transition:0.2s;
 }
 
-.logout:hover{
-background:#c62828;
+.sidebar a:hover{
+background:#08345c;
 }
 
-/* Dashboard */
+/* MAIN AREA */
 
-.dashboard{
+.main{
+margin-left:240px;
 padding:40px;
 }
 
-/* Cards */
+/* CARDS */
 
 .cards{
 display:flex;
-gap:30px;
-margin-bottom:40px;
+gap:25px;
 flex-wrap:wrap;
+margin-bottom:30px;
 }
 
 .card{
 background:white;
-padding:30px;
+padding:25px;
 border-radius:12px;
-box-shadow:0 8px 20px rgba(0,0,0,0.08);
-width:300px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+flex:1;
+min-width:250px;
 border-top:5px solid #00a0e3;
-transition:0.2s;
 }
 
-.card:hover{
-transform:translateY(-4px);
-}
-
-/* Inputs */
-
-input{
-width:100%;
-padding:12px;
-margin:10px 0;
-border-radius:6px;
-border:1px solid #d0d7e2;
-font-size:14px;
-}
-
-/* Buttons */
+/* BUTTON */
 
 button{
-padding:12px;
-border:none;
 background:#0f4c81;
 color:white;
-cursor:pointer;
+border:none;
+padding:12px 18px;
 border-radius:6px;
+cursor:pointer;
 font-weight:500;
-transition:0.2s;
 }
 
 button:hover{
 background:#08345c;
 }
 
-/* Transactions Section */
+/* INPUT */
 
-.transactions{
-background:white;
-padding:30px;
-border-radius:12px;
-box-shadow:0 8px 20px rgba(0,0,0,0.08);
+input{
+width:100%;
+padding:12px;
+margin:10px 0;
+border-radius:6px;
+border:1px solid #ccc;
 }
 
-/* Table */
+/* TABLE */
 
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:20px;
+background:white;
+border-radius:10px;
+overflow:hidden;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
 }
 
 th{
 background:#0f4c81;
 color:white;
-padding:12px;
+padding:14px;
 text-align:left;
 }
 
@@ -193,4 +123,27 @@ border-bottom:1px solid #eee;
 
 tr:hover{
 background:#f4f9ff;
+}
+
+/* LOGIN PAGE */
+
+.login-container{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#0f4c81,#00a0e3);
+}
+
+.login-box{
+background:white;
+padding:40px;
+border-radius:12px;
+width:350px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+.login-box h2{
+text-align:center;
+margin-bottom:20px;
 }
