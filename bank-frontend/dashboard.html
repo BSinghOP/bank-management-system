@@ -1,69 +1,65 @@
 <!DOCTYPE html>
 <html>
-
-<div class="header">
-<h1>SRM BANKING MANAGEMENT SYSTEM</h1>
-<button class="logout" onclick="logout()">Logout</button>
-</div>
+<head>
+<title>Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
 
 <body>
 
-<div class="dashboard">
-
-<div class="header">
-
-<h1>SRM Banking Management System</h1>
-
-<button onclick="logout()" class="logout">Logout</button>
-
+<div class="sidebar">
+<a href="#">Dashboard</a>
+<a href="#">Transactions</a>
+<a href="#">Transfer Money</a>
+<a href="#">Profile</a>
+<a onclick="logout()">Logout</a>
 </div>
 
+<div class="header">
+<h1>SRM BANKING MANAGEMENT SYSTEM</h1>
+</div>
+
+<div class="main">
 
 <div class="cards">
 
 <div class="card">
-
-<h2>Your Balance</h2>
-
+<h3>Account Balance</h3>
 <p id="balance">₹0</p>
-
-<button onclick="getBalance()">Refresh Balance</button>
-
+<button onclick="getBalance()">Refresh</button>
 </div>
-
 
 <div class="card">
-
-<h2>Transfer Money</h2>
+<h3>Transfer Money</h3>
 
 <input id="receiver" placeholder="Receiver Email">
-
 <input id="amount" placeholder="Amount">
 
-<button onclick="transfer()">Send Money</button>
+<button onclick="transfer()">Send</button>
 
 </div>
 
 </div>
-
-
-<div class="transactions">
 
 <h2>Transaction History</h2>
 
-<div id="transactionsList">
+<table>
+<thead>
+<tr>
+<th>Sender</th>
+<th>Receiver</th>
+<th>Amount</th>
+<th>Date</th>
+</tr>
+</thead>
 
-No transactions yet
+<tbody id="transactions"></tbody>
 
-</div>
-
-</div>
+</table>
 
 </div>
 
 <script src="script.js"></script>
 
 </body>
-
 </html>
-
