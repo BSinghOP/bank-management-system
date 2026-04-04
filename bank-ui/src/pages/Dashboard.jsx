@@ -1,13 +1,38 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function Dashboard() {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
 
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // 🔐 AUTH CHECK + DATA LOAD
   useEffect(() => {
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
+    // ✅ verify token with backend
+    axios
+      .get("/api/verify-token", {
+        headers: { Authorization: token },
+      })
+      .then(() => {
+        // ✅ fetch data only if token valid
+        loadData();
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        navigate("/");
+      });
+  }, []);
+
+  // 📊 LOAD DATA
+  const loadData = () => {
     axios
       .get("/api/balance", {
         headers: { Authorization: token },
@@ -19,37 +44,64 @@ export default function Dashboard() {
         headers: { Authorization: token },
       })
       .then((res) => setTransactions(res.data));
-  }, []);
+  };
+
+  // 🚪 LOGOUT
+  const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
 
   return (
     <div style={styles.container}>
       {/* SIDEBAR */}
       <div style={styles.sidebar}>
         <h2>BSingh Bank</h2>
-        <p>Dashboard</p>
-        <p>Transfer</p>
-        <p>Transactions</p>
-        <p>Logout</p>
+
+        <p onClick={() => navigate("/dashboard")}>Dashboard</p>
+        <p onClick={() => navigate("/transfer")}>Transfer</p>
+        <p onClick={() => navigate("/dashboard")}>Transactions</p>
+
+        <p onClick={logout} style={{ marginTop: "20px", color: "red" }}>
+          Logout
+        </p>
       </div>
 
       {/* MAIN */}
       <div style={styles.main}>
         <h1>Welcome 👋</h1>
 
-        {/* BALANCE CARD */}
+        {/* 💳 BALANCE */}
         <div style={styles.card}>
           <h3>Current Balance</h3>
           <h1>₹{balance}</h1>
         </div>
 
-        {/* QUICK ACTIONS */}
+        {/* 🔘 ACTIONS */}
         <div style={styles.actions}>
-          <button style={styles.actionBtn}>Send Money</button>
-          <button style={styles.actionBtn}>Add Money</button>
-          <button style={styles.actionBtn}>History</button>
+          <button
+            style={styles.actionBtn}
+            onClick={() => navigate("/transfer")}
+          >
+            Send Money
+          </button>
+
+          <button
+            style={styles.actionBtn}
+            onClick={() => alert("Coming soon")}
+          >
+            Add Money
+          </button>
+
+          <button
+            style={styles.actionBtn}
+            onClick={loadData}
+          >
+            Refresh
+          </button>
         </div>
 
-        {/* TRANSACTIONS */}
+        {/* 🧾 TRANSACTIONS */}
         <div style={styles.tableBox}>
           <h3>Recent Transactions</h3>
 
@@ -69,7 +121,9 @@ export default function Dashboard() {
                   <td>{t.id}</td>
                   <td>{t.sender_id}</td>
                   <td>{t.receiver_id}</td>
-                  <td style={{ color: "green" }}>₹{t.amount}</td>
+                  <td style={{ color: "green", fontWeight: "bold" }}>
+                    ₹{t.amount}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -80,6 +134,7 @@ export default function Dashboard() {
   );
 }
 
+// 🎨 STYLES
 const styles = {
   container: {
     display: "flex",
@@ -93,6 +148,7 @@ const styles = {
     background: "#1e3a8a",
     color: "white",
     padding: "20px",
+    cursor: "pointer",
   },
 
   main: {

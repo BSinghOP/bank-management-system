@@ -2,222 +2,269 @@ const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 const db = require("./db");
-
+const admin = require("./middleware/admin");
 const app = express();
+
 app.use(express.json());
 
-// 🔐 CORS (allow your domain)
 app.use(cors({
-    origin: ["https://dbms.bsingh.codes"],
-    credentials: true
+  origin: ["https://dbms.bsingh.codes"],
+  credentials: true
 }));
 
 const SECRET = "secretkey";
 
-// 🔑 OTP store (temporary memory)
-const otpStore = {};
 
 // ========================
 // 🔐 AUTH MIDDLEWARE
 // ========================
 function auth(req, res, next) {
-    try {
-        const token = req.headers.authorization;
-        if (!token) return res.status(401).send("No token");
+  try {
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).send("No token");
 
-        const decoded = jwt.verify(token, SECRET);
-        req.user = decoded;
+    const decoded = jwt.verify(token, SECRET);
+    req.user = decoded;
 
-        next();
-    } catch {
-        res.status(401).send("Invalid token");
-    }
+    next();
+  } catch {
+    res.status(401).send("Invalid token");
+  }
 }
+
+// ========================
+// 👑 ADMIN MIDDLEWARE
+// ========================
+function admin(req, res, next) {
+  if (req.user.role !== "admin") {
+    return res.status(403).send("Access denied");
+  }
+  next();
+}
+
 
 // ========================
 // 🏠 HOME
 // ========================
 app.get("/", (req, res) => {
-    res.send("Bank API server is running");
+  res.send("Bank API running");
 });
+
 
 // ========================
 // 👤 REGISTER
 // ========================
 app.post("/register", async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
-        const hashed = await bcrypt.hash(password, 10);
+  const { name, email, password } = req.body;
 
-        db.query(
-            "INSERT INTO users (name,email,password,balance) VALUES (?,?,?,1000)",
-            [name, email, hashed],
-            (err) => {
-                if (err) return res.status(500).send(err);
-                res.send("Registered successfully");
-            }
-        );
-    } catch (err) {
-        res.status(500).send(err);
+  const hashed = await bcrypt.hash(password, 10);
+
+  db.query(
+    "INSERT INTO users (name,email,password,balance,role) VALUES (?,?,?,?,?)",
+    [name, email, hashed, 1000, "user"],
+    (err) => {
+      if (err) return res.status(500).send(err);
+      res.send("Registered");
     }
+  );
 });
+
 
 // ========================
 // 🔑 LOGIN (PASSWORD)
 // ========================
 app.post("/login", (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    db.query("SELECT * FROM users WHERE email=?", [email], async (err, result) => {
-        if (err) return res.status(500).send(err);
-        if (result.length === 0) return res.send("User not found");
+  db.query("SELECT * FROM users WHERE email=?", [email], async (err, result) => {
+    if (err) return res.status(500).send(err);
+    if (result.length === 0) return res.send("User not found");
 
-        const valid = await bcrypt.compare(password, result[0].password);
-        if (!valid) return res.send("Wrong password");
+    const user = result[0];
 
-        const token = jwt.sign({ id: result[0].id }, SECRET);
-        res.json({ token });
-    });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.send("Wrong password");
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      SECRET
+    );
+
+    res.json({ token });
+  });
 });
+
 
 // ========================
 // 📩 SEND OTP
 // ========================
-const nodemailer = require("nodemailer");
+app.post("/send-otp", (req, res) => {
+  const { email } = req.body;
 
-app.post("/send-otp", async (req, res) => {
-    const { email } = req.body;
+  const otp = Math.floor(100000 + Math.random() * 900000);
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    otpStore[email] = otp;
+  const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
-    console.log("OTP:", otp);
+  db.query(
+    "INSERT INTO otp_codes (email, otp, expires_at) VALUES (?, ?, ?)",
+    [email, otp, expiry]
+  );
 
-    // ✅ Respond immediately (VERY IMPORTANT)
-    res.send("OTP generated");
+  console.log("OTP:", otp);
 
-    // 🔥 Send email in background (non-blocking)
-    try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: "bibekpreetsingh15@gmail.com",
-                pass: "scmv oafi ukkl sfnj"
-            }
-        });
+  res.send("OTP generated");
 
-        await transporter.sendMail({
-            from: "BSingh Bank <YOUR_EMAIL@gmail.com>",
-            to: email,
-            subject: "Your OTP - BSingh Bank",
-            text: `Your OTP is: ${otp}`
-        });
+  // EMAIL (non-blocking)
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "YOUR_EMAIL@gmail.com",
+        pass: "YOUR_APP_PASSWORD"
+      }
+    });
 
-        console.log("Email sent successfully");
-    } catch (err) {
-        console.error("Email error:", err);
-    }
+    transporter.sendMail({
+      from: "BSingh Bank <YOUR_EMAIL@gmail.com>",
+      to: email,
+      subject: "Your OTP",
+      text: `Your OTP is ${otp}`
+    });
+
+  } catch (err) {
+    console.log("Email error:", err);
+  }
 });
-//VERIFY OTP
+
+
+// ========================
+// ✅ VERIFY OTP
 // ========================
 app.post("/verify-otp", (req, res) => {
-    const { email, otp } = req.body;
+  const { email, otp } = req.body;
 
-    if (otpStore[email] == otp) {
-        db.query("SELECT * FROM users WHERE email=?", [email], (err, result) => {
-            if (err) return res.status(500).send(err);
-            if (result.length === 0) return res.send("User not found");
+  db.query(
+    "SELECT * FROM otp_codes WHERE email=? ORDER BY id DESC LIMIT 1",
+    [email],
+    (err, result) => {
+      if (err) return res.status(500).send(err);
+      if (result.length === 0) return res.send("No OTP");
 
-            const token = jwt.sign({ id: result[0].id }, SECRET);
-            res.json({ token });
-        });
-    } else {
-        res.status(400).send("Invalid OTP");
+      const record = result[0];
+
+      if (record.otp != otp || new Date() > record.expires_at) {
+        return res.status(400).send("Invalid or expired OTP");
+      }
+
+      db.query("SELECT * FROM users WHERE email=?", [email], (err, userRes) => {
+        if (userRes.length === 0) return res.send("User not found");
+
+        const user = userRes[0];
+
+        const token = jwt.sign(
+          { id: user.id, role: user.role },
+          SECRET
+        );
+
+        res.json({ token });
+      });
     }
+  );
 });
 
+
 // ========================
-// 💰 GET BALANCE
+// 💰 BALANCE
 // ========================
 app.get("/balance", auth, (req, res) => {
-    db.query(
-        "SELECT balance FROM users WHERE id=?",
-        [req.user.id],
-        (err, result) => {
-            if (err) return res.status(500).send(err);
-            res.json(result[0]);
-        }
-    );
+  db.query(
+    "SELECT balance FROM users WHERE id=?",
+    [req.user.id],
+    (err, result) => {
+      if (err) return res.send(err);
+      res.json(result[0]);
+    }
+  );
 });
 
+
 // ========================
-// 💸 TRANSFER MONEY (SAFE)
+// 💸 TRANSFER
 // ========================
 app.post("/transfer", auth, (req, res) => {
-    const { receiverEmail, amount } = req.body;
-    const senderId = req.user.id;
+  const { receiverEmail, amount } = req.body;
+  const senderId = req.user.id;
 
-    db.beginTransaction(err => {
-        if (err) return res.status(500).send(err);
+  db.beginTransaction(err => {
+    if (err) return res.send(err);
 
-        db.query("SELECT * FROM users WHERE email=?", [receiverEmail], (err, receiver) => {
-            if (err || receiver.length === 0)
-                return db.rollback(() => res.send("Receiver not found"));
+    db.query("SELECT * FROM users WHERE email=?", [receiverEmail], (err, receiver) => {
+      if (receiver.length === 0)
+        return db.rollback(() => res.send("Receiver not found"));
 
-            const receiverId = receiver[0].id;
+      const receiverId = receiver[0].id;
 
-            db.query("SELECT balance FROM users WHERE id=?", [senderId], (err, sender) => {
-                if (err || sender[0].balance < amount)
-                    return db.rollback(() => res.send("Insufficient balance"));
+      db.query("SELECT balance FROM users WHERE id=?", [senderId], (err, sender) => {
+        if (sender[0].balance < amount)
+          return db.rollback(() => res.send("Insufficient balance"));
 
-                db.query("UPDATE users SET balance = balance - ? WHERE id=?", [amount, senderId]);
-                db.query("UPDATE users SET balance = balance + ? WHERE id=?", [amount, receiverId]);
+        db.query("UPDATE users SET balance = balance - ? WHERE id=?", [amount, senderId]);
+        db.query("UPDATE users SET balance = balance + ? WHERE id=?", [amount, receiverId]);
 
-                db.query(
-                    "INSERT INTO transactions (sender_id, receiver_id, amount) VALUES (?,?,?)",
-                    [senderId, receiverId, amount]
-                );
+        db.query(
+          "INSERT INTO transactions (sender_id, receiver_id, amount) VALUES (?,?,?)",
+          [senderId, receiverId, amount]
+        );
 
-                db.commit(err => {
-                    if (err) return db.rollback(() => res.send(err));
-                    res.send("Transfer successful");
-                });
-            });
+        db.commit(err => {
+          if (err) return db.rollback(() => res.send(err));
+          res.send("Transfer successful");
         });
+      });
     });
+  });
 });
+
 
 // ========================
 // 🧾 USER TRANSACTIONS
 // ========================
 app.get("/transactions", auth, (req, res) => {
-    db.query(
-        "SELECT * FROM transactions WHERE sender_id=? OR receiver_id=? ORDER BY id DESC",
-        [req.user.id, req.user.id],
-        (err, result) => {
-            if (err) return res.status(500).send(err);
-            res.json(result);
-        }
-    );
+  db.query(
+    "SELECT * FROM transactions WHERE sender_id=? OR receiver_id=?",
+    [req.user.id, req.user.id],
+    (err, result) => {
+      res.json(result);
+    }
+  );
 });
 
+
 // ========================
-// 🛠 ADMIN TRANSACTIONS
+// 🛠 ADMIN ROUTE
 // ========================
-app.get("/admin/transactions", (req, res) => {
-    db.query(
-        "SELECT * FROM transactions ORDER BY id DESC",
-        (err, result) => {
-            if (err) return res.status(500).send(err);
-            res.json(result);
-        }
-    );
+app.get("/admin/transactions", auth, admin, (req, res) => {
+  db.query("SELECT * FROM transactions", (err, result) => {
+    res.json(result);
+  });
 });
+
 
 // ========================
 // 🚀 START SERVER
 // ========================
 app.listen(3000, "0.0.0.0", () => {
-    console.log("Server running on port 3000");
+  console.log("Server running on port 3000");
+});
+//something
+app.get("/verify-token", (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    jwt.verify(token, SECRET);
+    res.send("Valid");
+  } catch {
+    res.status(401).send("Invalid");
+  }
 });
